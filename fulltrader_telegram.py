@@ -108,11 +108,26 @@ def enviar_telegram(mensagem):
     print("Mensagem enviada com sucesso!")
 
 
+def avisar_erro_no_telegram(erro):
+    """Tenta avisar no Telegram que a execução falhou (ex: token expirado)."""
+    try:
+        mensagem = f"⚠️ *Falha ao buscar os jogos do dia*\n\n{erro}"
+        enviar_telegram(mensagem)
+    except Exception as e:
+        print(f"Não consegui nem avisar no Telegram sobre o erro: {e}")
+
+
 def main():
     hoje = datetime.now(FUSO_BRASILIA).strftime("%Y-%m-%d")
 
     print("Buscando todos os filtros salvos na conta...")
-    todos_filtros = buscar_todos_filtros(ACCESS_TOKEN)
+    try:
+        todos_filtros = buscar_todos_filtros(ACCESS_TOKEN)
+    except Exception as e:
+        print(f"Erro ao buscar filtros: {e}")
+        avisar_erro_no_telegram(e)
+        raise
+
     print(f"Encontrados {len(todos_filtros)} filtros: {[f.get('name') for f in todos_filtros]}\n")
 
     blocos_mensagem = []
