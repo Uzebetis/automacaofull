@@ -1,0 +1,29 @@
+name: Enviar jogos do dia para o Telegram
+
+on:
+  schedule:
+    # 03:05 UTC = 00:05 horário de Brasília
+    - cron: "5 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install requests
+
+      - name: Rodar script
+        env:
+          FULLTRADER_ACCESS_TOKEN: ${{ secrets.FULLTRADER_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python fulltrader_telegram.py
