@@ -143,10 +143,9 @@ def enviar_telegram(mensagem):
     for i, parte in enumerate(partes, start=1):
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte}
         resp = requests.post(url, json=payload)
-        if resp.status_code != 200:
-            print(f"  Erro no envio da parte {i}/{len(partes)}: {resp.status_code} - {resp.text}")
+        print(f"  [parte {i}/{len(partes)}] status={resp.status_code} resposta={resp.text}", flush=True)
         resp.raise_for_status()
-        print(f"  Parte {i}/{len(partes)} enviada com sucesso!")
+        print(f"  Parte {i}/{len(partes)} enviada com sucesso!", flush=True)
 
 
 def avisar_erro_no_telegram(erro):
