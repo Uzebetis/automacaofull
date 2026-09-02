@@ -77,8 +77,8 @@ def buscar_jogos_filtrados(token, data_hoje, payload_filtro):
     return resp.json()
 
 
-def formatar_mensagem(jogos_detalhados, nome_filtro):
-    linhas = [f"📋 *Jogos do dia - filtro: {nome_filtro}*\n"]
+def formatar_mensagem(jogos_detalhados, nome_filtro, data_formatada):
+    linhas = [f"🤖 Jogos de {data_formatada} - filtro: {nome_filtro}\n"]
 
     for jogo in jogos_detalhados:
         time_casa = jogo[2]
@@ -100,18 +100,59 @@ def formatar_mensagem(jogos_detalhados, nome_filtro):
     return "\n".join(linhas)
 
 
+LIMITE_TELEGRAM = 3500  # um pouco abaixo do limite real (4096) por segurança
+
+
+def _dividir_mensagem_em_partes(mensagem, separador="\n\n---\n\n"):
+    """Divide a mensagem em pedaços que cabem no limite do Telegram,
+    tentando quebrar nos separadores entre filtros (não no meio de um bloco)."""
+    if len(mensagem) <= LIMITE_TELEGRAM:
+        return [mensagem]
+
+    blocos = mensagem.split(separador)
+    partes = []
+    parte_atual = ""
+
+    for bloco in blocos:
+        candidato = (parte_atual + separador + bloco) if parte_atual else bloco
+        if len(candidato) > LIMITE_TELEGRAM and parte_atual:
+            partes.append(parte_atual)
+            parte_atual = bloco
+        else:
+            parte_atual = candidato
+
+    if parte_atual:
+        partes.append(parte_atual)
+
+    # segurança extra: se algum bloco sozinho ainda for maior que o limite
+    # (filtro com MUITOS jogos), corta na força mesmo
+    partes_finais = []
+    for parte in partes:
+        while len(parte) > LIMITE_TELEGRAM:
+            partes_finais.append(parte[:LIMITE_TELEGRAM])
+            parte = parte[LIMITE_TELEGRAM:]
+        partes_finais.append(parte)
+
+    return partes_finais
+
+
 def enviar_telegram(mensagem):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mensagem, "parse_mode": "Markdown"}
-    resp = requests.post(url, json=payload)
-    resp.raise_for_status()
-    print("Mensagem enviada com sucesso!")
+    partes = _dividir_mensagem_em_partes(mensagem)
+
+    for i, parte in enumerate(partes, start=1):
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte}
+        resp = requests.post(url, json=payload)
+        if resp.status_code != 200:
+            print(f"  Erro no envio da parte {i}/{len(partes)}: {resp.status_code} - {resp.text}")
+        resp.raise_for_status()
+        print(f"  Parte {i}/{len(partes)} enviada com sucesso!")
 
 
 def avisar_erro_no_telegram(erro):
     """Tenta avisar no Telegram que a execução falhou (ex: token expirado)."""
     try:
-        mensagem = f"⚠️ *Falha ao buscar os jogos do dia*\n\n{erro}"
+        mensagem = f"⚠️ Falha ao buscar os jogos do dia\n\n{erro}"
         enviar_telegram(mensagem)
     except Exception as e:
         print(f"Não consegui nem avisar no Telegram sobre o erro: {e}")
@@ -119,6 +160,7 @@ def avisar_erro_no_telegram(erro):
 
 def main():
     hoje = datetime.now(FUSO_BRASILIA).strftime("%Y-%m-%d")
+    hoje_formatado = datetime.now(FUSO_BRASILIA).strftime("%d/%m/%Y")
 
     print("Buscando todos os filtros salvos na conta...")
     try:
@@ -145,7 +187,7 @@ def main():
             print(f"  Erro ao aplicar '{nome_filtro}': {e}")
             continue
 
-        bloco = formatar_mensagem(jogos_filtrados, nome_filtro)
+        bloco = formatar_mensagem(jogos_filtrados, nome_filtro, hoje_formatado)
         blocos_mensagem.append(bloco)
 
     mensagem_final = "\n\n" + ("\n\n---\n\n".join(blocos_mensagem))
