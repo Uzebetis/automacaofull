@@ -1,0 +1,44 @@
+name: Monitor de Odds - HT-Z1
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # a cada 5 minutos
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # necessário pra salvar o arquivo de estado de volta no repo
+
+jobs:
+  monitorar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install requests
+
+      - name: Rodar monitor de odds
+        env:
+          FULLTRADER_ACCESS_TOKEN: ${{ secrets.FULLTRADER_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SPORTRADAR_ODDS_TOKEN: ${{ secrets.SPORTRADAR_ODDS_TOKEN }}
+        run: python monitor_odds.py
+
+      - name: Salvar estado de alertas (se mudou)
+        run: |
+          if [ -n "$(git status --porcelain estado_alertas_odds.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add estado_alertas_odds.json
+            git commit -m "Atualiza estado de alertas de odds"
+            git push
+          else
+            echo "Nada novo pra salvar."
+          fi
