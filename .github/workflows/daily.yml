@@ -1,9 +1,23 @@
 name: Enviar jogos do dia para o Telegram
 
+# ===================================================================
+# COMO MUDAR O HORÁRIO VOCÊ MESMO:
+# A linha "cron" abaixo usa horário UTC, não horário de Brasília.
+# Fórmula: hora_UTC = hora_Brasília + 3
+#
+# Exemplos prontos:
+#   Quer rodar às 08:30 (Brasília)? -> UTC = 11:30 -> cron: "30 11 * * *"
+#   Quer rodar às 00:05 (Brasília)? -> UTC = 03:05 -> cron: "5 3 * * *"
+#   Quer rodar às 06:00 (Brasília)? -> UTC = 09:00 -> cron: "0 9 * * *"
+#   Quer rodar às 20:15 (Brasília)? -> UTC = 23:15 -> cron: "15 23 * * *"
+#
+# O formato é: "MINUTO HORA * * *" (sempre nessa ordem, minuto primeiro)
+# Depois de editar, é só clicar em "Commit changes" no GitHub que já
+# vale a partir da próxima execução, sem precisar mexer em mais nada.
+# ===================================================================
 on:
   schedule:
-    # 03:05 UTC = 00:05 horário de Brasília
-    - cron: "5 3 * * *"
+    - cron: "30 11 * * *"   # 08:30 horário de Brasília
   workflow_dispatch: {}
 
 jobs:
