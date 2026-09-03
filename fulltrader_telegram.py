@@ -27,7 +27,7 @@ import requests
 from datetime import datetime, timezone, timedelta
 
 # ======================= CONFIGURAÇÃO =======================
-ACCESS_TOKEN = os.environ.get("FULLTRADER_ACCESS_TOKEN", "COLE_SEU_TOKEN_AQUI")
+ACCESS_TOKEN = os.environ.get("FULLTRADER_ACCESS_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODE0NTIsImVtYWlsIjoiZHIudHJhZGVyQHlhaG9vLmNvbSIsImFkbWluIjpmYWxzZSwiYmV0dGVzdFVVSUQiOm51bGwsInVzZXJQcm9kdWN0cyI6WyJzY2FubmVyIiwiemV1cyIsImx1Y3kiLCJzaGVybG9jayIsInB1YmxpY0xpc3RzIiwibWFydmluIl0sImlhdCI6MTc4ODM2MDIzMywiZXhwIjoxNzg4NTMzMDMzfQ.6tm1Tp7_poHup5IfZBkXTwjbuaxyCQqNRUN0eUL6Iww")
 
 GAMES_COUNT = 5
 
