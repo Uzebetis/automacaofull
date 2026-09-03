@@ -32,7 +32,7 @@ ACCESS_TOKEN = os.environ.get("FULLTRADER_ACCESS_TOKEN", "COLE_SEU_TOKEN_AQUI")
 GAMES_COUNT = 5
 
 ENVIAR_TELEGRAM = True
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "SEU_TOKEN_DO_BOT_AQUI")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODE0NTIsImVtYWlsIjoiZHIudHJhZGVyQHlhaG9vLmNvbSIsImFkbWluIjpmYWxzZSwiYmV0dGVzdFVVSUQiOm51bGwsInVzZXJQcm9kdWN0cyI6WyJzY2FubmVyIiwiemV1cyIsImx1Y3kiLCJzaGVybG9jayIsInB1YmxpY0xpc3RzIiwibWFydmluIl0sImlhdCI6MTc4ODM2MDIzMywiZXhwIjoxNzg4NTMzMDMzfQ.6tm1Tp7_poHup5IfZBkXTwjbuaxyCQqNRUN0eUL6Iww")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "SEU_CHAT_ID_AQUI")
 # ==============================================================
 
