@@ -10,6 +10,10 @@ funcionar com "Secrets" do GitHub Actions sem expor nada no código:
 - TELEGRAM_BOT_TOKEN
 - TELEGRAM_CHAT_ID
 
+Se quiser rodar localmente (Colab, PC, etc) sem usar variáveis de
+ambiente, pode preencher direto nas linhas abaixo, no lugar de
+os.environ.get(...).
+
 COMO PEGAR O FULLTRADER_ACCESS_TOKEN:
 1. Faça login normalmente em app.fulltrader.com pelo navegador
 2. Aperte F12 -> aba "Network" -> filtre por "Fetch/XHR"
@@ -27,13 +31,19 @@ import requests
 from datetime import datetime, timezone, timedelta
 
 # ======================= CONFIGURAÇÃO =======================
-ACCESS_TOKEN = os.environ.get("FULLTRADER_ACCESS_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODE0NTIsImVtYWlsIjoiZHIudHJhZGVyQHlhaG9vLmNvbSIsImFkbWluIjpmYWxzZSwiYmV0dGVzdFVVSUQiOm51bGwsInVzZXJQcm9kdWN0cyI6WyJzY2FubmVyIiwiemV1cyIsImx1Y3kiLCJzaGVybG9jayIsInB1YmxpY0xpc3RzIiwibWFydmluIl0sImlhdCI6MTc4ODM2MDIzMywiZXhwIjoxNzg4NTMzMDMzfQ.6tm1Tp7_poHup5IfZBkXTwjbuaxyCQqNRUN0eUL6Iww")
+ACCESS_TOKEN = os.environ.get("FULLTRADER_ACCESS_TOKEN")
+if not ACCESS_TOKEN:
+    if os.path.exists("meu_token.txt"):
+        with open("meu_token.txt") as _f:
+            ACCESS_TOKEN = _f.read().strip()
+    else:
+        ACCESS_TOKEN = "COLE_SEU_TOKEN_AQUI"
 
 GAMES_COUNT = 5
 
 ENVIAR_TELEGRAM = True
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODE0NTIsImVtYWlsIjoiZHIudHJhZGVyQHlhaG9vLmNvbSIsImFkbWluIjpmYWxzZSwiYmV0dGVzdFVVSUQiOm51bGwsInVzZXJQcm9kdWN0cyI6WyJzY2FubmVyIiwiemV1cyIsImx1Y3kiLCJzaGVybG9jayIsInB1YmxpY0xpc3RzIiwibWFydmluIl0sImlhdCI6MTc4ODM2MDIzMywiZXhwIjoxNzg4NTMzMDMzfQ.6tm1Tp7_poHup5IfZBkXTwjbuaxyCQqNRUN0eUL6Iww")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "SEU_CHAT_ID_AQUI")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8866115552:AAHCP2WeNupAmOEYAFyy7ehuEl4e-kzbmA0")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "651702332")
 # ==============================================================
 
 FILTERS_URL = "https://apiprelive.fulltraderapps.com/filters"
@@ -73,8 +83,14 @@ def buscar_jogos_filtrados(token, data_hoje, payload_filtro):
     return resp.json()
 
 
-def formatar_mensagem(jogos_detalhados, nome_filtro, data_formatada):
-    linhas = [f"🤖 Jogos de {data_formatada} - filtro: {nome_filtro}\n"]
+def formatar_mensagem(jogos_detalhados, nome_filtro):
+    # ordena os jogos por horário (mais cedo primeiro)
+    jogos_detalhados = sorted(
+        jogos_detalhados,
+        key=lambda j: j[12] if len(j) > 12 and j[12] is not None else 0,
+    )
+
+    linhas = [f"🤖 {nome_filtro}\n"]
 
     for jogo in jogos_detalhados:
         time_casa = jogo[2]
@@ -120,6 +136,8 @@ def _dividir_mensagem_em_partes(mensagem, separador="\n\n---\n\n"):
     if parte_atual:
         partes.append(parte_atual)
 
+    # segurança extra: se algum bloco sozinho ainda for maior que o limite
+    # (filtro com MUITOS jogos), corta na força mesmo
     partes_finais = []
     for parte in partes:
         while len(parte) > LIMITE_TELEGRAM:
@@ -180,10 +198,11 @@ def main():
             print(f"  Erro ao aplicar '{nome_filtro}': {e}")
             continue
 
-        bloco = formatar_mensagem(jogos_filtrados, nome_filtro, hoje_formatado)
+        bloco = formatar_mensagem(jogos_filtrados, nome_filtro)
         blocos_mensagem.append(bloco)
 
-    mensagem_final = "\n\n" + ("\n\n---\n\n".join(blocos_mensagem))
+    cabecalho = f"📋 LISTA DOS JOGOS - {hoje_formatado}"
+    mensagem_final = cabecalho + "\n\n" + ("\n\n---\n\n".join(blocos_mensagem))
 
     print("\n===== RESULTADO (TODOS OS FILTROS) =====\n")
     print(mensagem_final)
