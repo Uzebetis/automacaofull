@@ -44,6 +44,7 @@ GAMES_COUNT = 5
 FILTRO_NOMES_ACEITOS = {"HT-Z1", "HTZ1", "HT-ZI", "HTZI"}
 
 ALVO_ODD = 1.40          # odd mínima pra avisar (odds p/ lucro do HT-Z1)
+JANELA_MINUTOS = 50       # só checa a odd do início do jogo até X minutos depois (1º tempo + acréscimos)
 MARKET_ID = 68            # "1st half - total"
 MARKET_TOTAL = "0.5"      # linha 0.5
 OUTCOME_PREFIXO = "over"  # queremos o lado "over 0.5"
@@ -220,6 +221,9 @@ def main():
 
     print(f"{len(jogos)} jogo(s) no filtro HT-Z1 hoje.")
 
+    agora = datetime.now(FUSO_BRASILIA)
+    checados = 0
+
     for jogo in jogos:
         match_id = extrair_sportradar_id(jogo)
         if not match_id:
@@ -232,6 +236,16 @@ def main():
         time_casa = jogo[2]
         time_fora = jogo[3]
 
+        # só checa o jogo se estiver dentro da janela relevante:
+        # do horário de início até JANELA_MINUTOS depois (1º tempo + acréscimos)
+        timestamp = jogo[12] if len(jogo) > 12 else None
+        if timestamp:
+            horario_jogo = datetime.fromtimestamp(timestamp, tz=FUSO_BRASILIA)
+            fim_janela = horario_jogo + timedelta(minutes=JANELA_MINUTOS)
+            if not (horario_jogo <= agora <= fim_janela):
+                continue  # fora da janela: pula silenciosamente, sem gastar chamada
+
+        checados += 1
         try:
             odd_atual = buscar_odd_atual(match_id)
         except Exception as e:
@@ -261,7 +275,7 @@ def main():
 
     estado["alertados"] = sorted(alertados)
     salvar_estado(estado)
-    print("Execução concluída.")
+    print(f"{checados} jogo(s) estavam dentro da janela de checagem (de {len(jogos)} no total). Execução concluída.")
 
 
 if __name__ == "__main__":
