@@ -135,9 +135,11 @@ def buscar_odd_atual(match_id):
 
     for mercado in markets:
         if mercado.get("_marketId") == MARKET_ID and str(mercado.get("specifiers", {}).get("total")) == MARKET_TOTAL:
+            if not mercado.get("active", False):
+                return None  # mercado existe mas foi fechado (ex: já saiu gol, aposta resolvida)
             for outcome in mercado.get("outcomes", []):
                 nome = (outcome.get("name") or "").lower()
-                if nome.startswith(OUTCOME_PREFIXO):
+                if nome.startswith(OUTCOME_PREFIXO) and outcome.get("active", False):
                     return outcome.get("odds")
     return None
 
