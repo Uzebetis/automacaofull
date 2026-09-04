@@ -115,9 +115,12 @@ def extrair_sportradar_id(jogo):
 
 
 def buscar_odd_atual(match_id):
-    """Retorna a odd atual do mercado configurado, ou None se o mercado
-    não estiver disponível pra esse jogo no momento. Levanta exceção se
-    o token de odds estiver expirado/inválido."""
+    """Retorna a odd atual do mercado configurado (0.5 HT).
+    - Retorna um número > 0 se o mercado estiver aberto, com a odd atual.
+    - Retorna 0 se o mercado já foi fechado (ex: já saiu o gol, aposta resolvida)
+      -> sinal pra parar de monitorar esse jogo específico.
+    - Retorna None se o mercado ainda nem foi publicado (tenta de novo depois).
+    Levanta exceção se o token de odds estiver expirado/inválido."""
     url = MARKETS_URL_TEMPLATE.format(match_id=match_id, token=SPORTRADAR_ODDS_TOKEN)
     resp = requests.get(url, timeout=15)
 
@@ -136,10 +139,12 @@ def buscar_odd_atual(match_id):
     for mercado in markets:
         if mercado.get("_marketId") == MARKET_ID and str(mercado.get("specifiers", {}).get("total")) == MARKET_TOTAL:
             if not mercado.get("active", False):
-                return None  # mercado existe mas foi fechado (ex: já saiu gol, aposta resolvida)
+                return 0  # mercado fechado (gol já saiu) -> parar de monitorar esse jogo
             for outcome in mercado.get("outcomes", []):
                 nome = (outcome.get("name") or "").lower()
-                if nome.startswith(OUTCOME_PREFIXO) and outcome.get("active", False):
+                if nome.startswith(OUTCOME_PREFIXO):
+                    if not outcome.get("active", False):
+                        return 0  # essa opção específica já fechou (gol já saiu)
                     return outcome.get("odds")
     return None
 
@@ -256,6 +261,11 @@ def main():
 
         if odd_atual is None:
             print(f"  {time_casa} x {time_fora}: mercado indisponível no momento.")
+            continue
+
+        if odd_atual == 0:
+            print(f"  {time_casa} x {time_fora}: mercado já fechado (gol já saiu) - parando de monitorar esse jogo.")
+            alertados.add(chave)  # marca como resolvido, sem enviar aviso, pra não checar mais hoje
             continue
 
         print(f"  {time_casa} x {time_fora}: odd atual {odd_atual}")
