@@ -134,7 +134,13 @@ def buscar_odd_atual(match_id):
     try:
         markets = data["doc"][0]["data"]["markets"]
     except (KeyError, IndexError, TypeError):
-        return None
+        # resposta "200 OK" mas sem a estrutura esperada -> quase sempre é
+        # o token de odds vencido (a Sportradar não devolve 403 nesse caso,
+        # devolve uma resposta vazia/incompleta), então tratamos igual.
+        raise Exception(
+            f"Resposta inesperada da Sportradar pro jogo {match_id} "
+            f"(token de odds provavelmente vencido). Resposta recebida: {str(data)[:200]}"
+        )
 
     for mercado in markets:
         if mercado.get("_marketId") == MARKET_ID and str(mercado.get("specifiers", {}).get("total")) == MARKET_TOTAL:
