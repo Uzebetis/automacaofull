@@ -43,7 +43,7 @@ GITHUB_REPO_URL = "https://github.com/Uzebetis/automacaofull"
 GAMES_COUNT = 5
 FILTRO_NOMES_ACEITOS = {"HT-Z1", "HTZ1", "HT-ZI", "HTZI"}
 
-ALVO_ODD >= 1.40          # odd mínima pra avisar (odds p/ lucro do HT-Z1)
+ALVO_ODD = 1.40          # odd mínima pra avisar (odds p/ lucro do HT-Z1)
 JANELA_MINUTOS = 50       # só checa a odd do início do jogo até X minutos depois (1º tempo + acréscimos)
 MARKET_ID = 68            # "1st half - total"
 MARKET_TOTAL = "0.5"      # linha 0.5
