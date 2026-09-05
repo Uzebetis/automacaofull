@@ -122,7 +122,13 @@ def buscar_odd_atual(match_id):
     - Retorna None se o mercado ainda nem foi publicado (tenta de novo depois).
     Levanta exceção se o token de odds estiver expirado/inválido."""
     url = MARKETS_URL_TEMPLATE.format(match_id=match_id, token=SPORTRADAR_ODDS_TOKEN)
-    resp = requests.get(url, timeout=15)
+    # a Sportradar valida a origem da chamada (o token tem "act":"origincheck"),
+    # então imitamos os cabeçalhos que o navegador manda de dentro do FullTrader
+    headers = {
+        "Origin": "https://app.fulltrader.com",
+        "Referer": "https://app.fulltrader.com/",
+    }
+    resp = requests.get(url, headers=headers, timeout=15)
 
     if resp.status_code != 200:
         raise Exception(
