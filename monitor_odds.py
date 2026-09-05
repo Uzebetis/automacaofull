@@ -43,7 +43,7 @@ GITHUB_REPO_URL = "https://github.com/Uzebetis/automacaofull"
 GAMES_COUNT = 5
 FILTRO_NOMES_ACEITOS = {"HT-Z1", "HTZ1", "HT-ZI", "HTZI"}
 
-ALVO_ODD = 1.40          # odd mínima pra avisar (odds p/ lucro do HT-Z1)
+ALVO_ODD >= 1.40          # odd mínima pra avisar (odds p/ lucro do HT-Z1)
 JANELA_MINUTOS = 50       # só checa a odd do início do jogo até X minutos depois (1º tempo + acréscimos)
 MARKET_ID = 68            # "1st half - total"
 MARKET_TOTAL = "0.5"      # linha 0.5
@@ -133,7 +133,8 @@ def buscar_odd_atual(match_id):
     if resp.status_code != 200:
         raise Exception(
             f"Token de odds (SPORTRADAR_ODDS_TOKEN) expirado ou inválido "
-            f"(status {resp.status_code}) ao consultar o jogo {match_id}."
+            f"(status {resp.status_code}) ao consultar o jogo {match_id}.\n"
+            f"Resposta da Sportradar: {resp.text[:300]}"
         )
 
     data = resp.json()
@@ -176,10 +177,11 @@ def avisar_erro(mensagem):
         print(f"Não consegui nem avisar no Telegram: {e}")
 
 
-def avisar_token_odds_vencido():
+def avisar_token_odds_vencido(detalhe=""):
     link = f"{GITHUB_REPO_URL}/settings/secrets/actions/SPORTRADAR_ODDS_TOKEN"
     avisar_erro(
-        "O token de odds ao vivo (SPORTRADAR_ODDS_TOKEN) expirou.\n\n"
+        "O token de odds ao vivo (SPORTRADAR_ODDS_TOKEN) expirou ou foi rejeitado.\n\n"
+        f"Detalhe técnico: {detalhe}\n\n"
         "Pra renovar:\n"
         "1. app.fulltrader.com -> Scanner -> Jogos\n"
         "2. F12 -> Network -> filtro Fetch/XHR\n"
@@ -268,7 +270,7 @@ def main():
         try:
             odd_atual = buscar_odd_atual(match_id)
         except Exception as e:
-            avisar_token_odds_vencido()
+            avisar_token_odds_vencido(detalhe=str(e))
             return  # token vencido afeta todos os jogos, não adianta continuar
 
         if odd_atual is None:
